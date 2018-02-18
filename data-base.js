@@ -6,6 +6,18 @@ var port = process.env.PORT || 3000
 
 const app = express();
 
+
+contact_1 = { 'fname': 'Aziz', 'sname': 'Kerimov', 'phone': '+7 929 594 40 67' };
+contact_2 = { 'fname': 'Anton', 'sname': 'Dimitriev', 'phone': '+7 917 591 13 90' };
+contact_3 = { 'fname': 'Alexey', 'sname': 'Ponomarev', 'phone': '+7 917 231 00 80' };
+contact_4 = { 'fname': 'Valentina', 'sname': 'Ponomareva', 'phone': '+7 927 498 50 01' };
+contact_5 = { 'fname': 'Max', 'sname': 'Belyaev', 'phone': '+7 967 085 52 43' };
+contact_6 = { 'fname': 'Regina', 'phone': '+7 962 574 23 45' };
+
+const mass = [
+  contact_1, contact_2, contact_3, contact_4, contact_5, contact_6
+];
+
 app.listen(port, () => {
   console.log(`Server listening at port ${port}`)
 });
@@ -18,72 +30,59 @@ MongoClient.connect(url, (err, db) => {
   } else {
     console.log(`Соединение установлено с ${url}`);
 
-    contact_1 = { 'fname': 'Aziz', 'sname': 'Kerimov', 'phone': '+7 929 594 40 67' };
-    contact_2 = { 'fname': 'Anton', 'sname': 'Dimitriev', 'phone': '+7 917 591 13 90' };
-    contact_3 = { 'fname': 'Alexey', 'sname': 'Ponomarev', 'phone': '+7 917 231 00 80' };
-    contact_4 = { 'fname': 'Valentina', 'sname': 'Ponomareva', 'phone': '+7 927 498 50 01' };
-    contact_5 = { 'fname': 'Max', 'sname': 'Belyaev', 'phone': '+7 967 085 52 43' };
-    contact_6 = { 'fname': 'Regina', 'phone': '+7 962 574 23 45' };
-
-    const mass = [
-      contact_1, contact_2, contact_3, contact_4, contact_5, contact_6
-    ];
-
     var collection = db.collection('collection');
-    collection.insert(mass);
-
-    restV1.get('/', (req, res) => {
-      res.json(collection);
-      res.sendStatus(200);
+    mass.forEach(el => {
+      collection.insert(el);
     });
 
-    restV1.post('/new/:fname/sname/:sname/phone/:phone', (req, res) => {
-      if (req.params.fname && req.params.sname && req.params.phone) {
+    restV1.get('/', (req, res) => {
+      res.status(200).send(`Контакты: ${collection}`);
+    });
+
+    restV1.post('/new', (req, res) => { // /new?fname=some&sname=some&phone=some
+      if (req.query) {
         const new_contact = {
-          'fname': req.params.fname,
-          'sname': req.params.sname,
-          'phone': req.params.phone
+          'fname': req.query.fname,
+          'sname': req.query.sname,
+          'phone': req.query.phone
         }
         collection.insert(new_contact);
 
-        res.json(collection);
-        res.sendStatus(200);
+        res.status(200).send(`Новый контакт создан: ${new_contact}`);
       } else {
         res.sendStatus(404);
       }
     });
 
-    restV1.put('/update/:who/att/:att/vul/:vul', (req, res) => {
-      if (req.params.who && req.params.att && req.params.vul) {
-        collection.update({ 'fname': req.params.who }, { '$set': { req.params.att: req.params.vul } });
+    restV1.put('/update', (req, res) => { // /update?findAtt=some&findVal=some&updAtt=some&updVal=some
+      if (req.query) {
+        collection.update({ req.query.findAtt: req.query.findVal }, { '$set': { req.query.updAtt: req.query.updVal } });
+        const updContact = collection.find({ req.query.findAtt: req.query.findVal });
 
-        res.json(collection);
-        res.sendStatus(200);
+        res.status(200).send(`Контакт обновлен: ${updContact}`);
       } else {
         res.sendStatus(404);
       }
 
     });
 
-    restV1.delete('/remove/:name', (req, res) => {
+    restV1.delete('/remove', (req, res) => { // /remove?fname=name
       if (req.params.name) {
-        collection.remove({ 'fname': req.params.name });
+        collection.remove({ 'fname': req.query.fname });
 
-        res.json(collection);
-        res.sendStatus(200);
+        res.status(200).send(`Контакт удален`)
       } else {
         res.sendStatus(404);
       }
     });
 
-    restV1.get('/find/:name', (req, res) => {
-      if (req.params.name && collection.find({ 'fname': req.params.name })) {
-        res.json(collection.find({ 'fname': req.params.name }));
-        res.sendStatus(200);
+    restV1.get('/find', (req, res) => { // /find?findAtt=some&findVal=some
+      if (collection.find({ req.query.findAtt: req.query.findVal })) {
+        res.status(200).send(`Контакт: ${collection.find({ req.query.findAtt : req.query.findVal })}`);
       } else {
         res.sendStatus(404);
       }
-    })
+    });
   }
   db.close();
 })
