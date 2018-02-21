@@ -81,9 +81,11 @@ MongoClient.connect(url, (err, db) => {
       }
     });
 
-    restV1.get('/find', (req, res) => { // /find?findAtt=some&findVal=some
-      if (collection.find({ req.query.findAtt: req.query.findVal })) {
-        res.status(200).send(`Контакт: ${collection.find({ req.query.findAtt : req.query.findVal })}`);
+    restV1.get('/find', (req, res) => { // /find?fname=some||sname=some||phone=some
+      if (req.query) {
+        for (var key in req.query) {
+          res.status(200).send(`Контакт: ${collection.find({ key : req.query[key] })}`);
+        }
       } else {
         res.sendStatus(404);
       }
