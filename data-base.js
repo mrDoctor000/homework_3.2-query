@@ -54,10 +54,15 @@ MongoClient.connect(url, (err, db) => {
       }
     });
 
-    restV1.put('/update', (req, res) => { // /update?findAtt=some&findVal=some&updAtt=some&updVal=some
+    restV1.put('/:id/update', (req, res) => { // /update?fname=some||false&sname=some||false&phone=some||false
       if (req.query) {
-        collection.update({ req.query.findAtt: req.query.findVal }, { '$set': { req.query.updAtt: req.query.updVal } });
-        const updContact = collection.find({ req.query.findAtt: req.query.findVal });
+        for (var key in req.query) {
+          if (req.query[key] !== 'false') {
+            collection.update({ _id: req.params.id }, { '$set': { 'fname': req.query[key] } });
+          }
+        }
+
+        const updContact = collection.find({ _id: req.params.id });
 
         res.status(200).send(`Контакт обновлен: ${updContact}`);
       } else {
