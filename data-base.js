@@ -81,11 +81,13 @@ MongoClient.connect(url, (err, db) => {
       }
     });
 
-    restV1.get('/find', (req, res) => { // /find?fname=some||sname=some||phone=some
+    restV1.get('/find', (req, res) => { // /find?fname=some||sname=some||phone=some если несколько пишется несколько атрибутов
       if (req.query) {
+        let findContact = collection;
         for (var key in req.query) {
-          res.status(200).send(`Контакт: ${collection.find({ key : req.query[key] })}`);
+          findContact = findContact.find({ key: req.query[key] });
         }
+        res.status(200).send(`Контакт: ${findContact}`);
       } else {
         res.sendStatus(404);
       }
